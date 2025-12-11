@@ -24,39 +24,8 @@
       border: 1px solid rgba(255,255,255,0.04);
     }
 
-    /* ====== Landing (countdown) ====== */
-    .landing {
-      display: grid;
-      place-items: center;
-      gap: 14px;
-      text-align: center;
-      padding: 18px;
-      border-radius: 12px;
-      margin-bottom: 12px;
-      background: linear-gradient(180deg, rgba(255,255,255,0.01), rgba(0,0,0,0.35));
-      border: 1px solid rgba(255,255,255,0.02);
-    }
-    .landing .hi { font-size: clamp(1.6rem, 3.5vw, 2.2rem); font-weight:800; background: linear-gradient(90deg,#fff 0%, #ffd4f2 50%, #fffbda 100%); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; }
-    .landing .lead { color:#d6cbe6; max-width:820px; line-height:1.45; }
-    .countdown {
-      display:flex;
-      gap:12px;
-      justify-content:center;
-      align-items:center;
-      flex-wrap:wrap;
-      margin-top:6px;
-    }
-    .count-card {
-      width:96px; min-width:72px; padding:10px; border-radius:10px; background: rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.03);
-      box-shadow: 0 8px 18px rgba(0,0,0,0.5); text-align:center;
-    }
-    .count-num { font-weight:800; font-size:1.2rem; }
-    .count-label { font-size:0.78rem; color:#d6cbe6; margin-top:6px; }
-    .landing .open-btn { padding:10px 16px; border-radius:10px; border:none; cursor:pointer; font-weight:700; background: linear-gradient(90deg,#ff86c7,#7b61ff); color:#111; box-shadow:0 8px 22px rgba(123,97,255,0.18); }
-    .landing .open-btn[disabled] { opacity:0.45; cursor:not-allowed; filter:grayscale(.03); }
-
     /* ====== Entry (password) ====== */
-    .entry { display: none; gap: 14px; place-items: center; text-align: center; padding: 28px; }
+    .entry { display: grid; gap: 14px; place-items: center; text-align: center; padding: 28px; }
     .title { font-size: 1.9rem; font-weight: 800; letter-spacing: -0.02em; }
     .subtitle { color: #d6cbe6; margin-top: 6px; font-size: 0.95rem; }
     input[type="password"] { width: min(520px, 92%); padding: 12px 14px; border-radius: 12px; border: none; outline: none; font-size: 1rem; background: rgba(255,255,255,0.03); color: #fff; box-shadow: inset 0 2px 8px rgba(0,0,0,0.6); }
@@ -244,7 +213,7 @@
     .memory-strip::-webkit-scrollbar-track {
       background: transparent;
     }
-    .memory_strip::-webkit-scrollbar-thumb {
+    .memory-strip::-webkit-scrollbar-thumb {
       border-radius: 999px;
       background: rgba(255,255,255,0.35);
     }
@@ -292,38 +261,8 @@
   <div class="wrap">
     <div class="card" role="main" aria-labelledby="for-sarshi">
 
-      <!-- LANDING (appears before password entry) -->
-      <div class="landing" id="landing">
-        <div class="hi">Hi Sarshi,</div>
-        <div class="lead">A little corner I built - something special will unlock for you soon. Hold a tiny smile for me until then.</div>
-
-        <div class="countdown" aria-live="polite">
-          <div class="count-card">
-            <div class="count-num" id="land-days">--</div>
-            <div class="count-label">Days</div>
-          </div>
-          <div class="count-card">
-            <div class="count-num" id="land-hours">--</div>
-            <div class="count-label">Hours</div>
-          </div>
-          <div class="count-card">
-            <div class="count-num" id="land-minutes">--</div>
-            <div class="count-label">Minutes</div>
-          </div>
-          <div class="count-card">
-            <div class="count-num" id="land-seconds">--</div>
-            <div class="count-label">Seconds</div>
-          </div>
-        </div>
-
-        <div style="margin-top:10px;">
-          <button class="open-btn" id="landing-open" disabled>Open</button>
-        </div>
-        <div style="font-size:0.86rem; color:#d6cbe6; margin-top:8px;">Unlocks on <strong>30 Jan 2026</strong> (IST)</div>
-      </div>
-
-      <!-- ENTRY (password) -->
-      <div class="entry" id="entry-screen" aria-hidden="true">
+      <!-- ENTRY -->
+      <div class="entry" id="entry-screen">
         <div>
           <div class="title" id="for-sarshi">For Sarshi — My quiet corner ✨</div>
           <div class="subtitle">A tiny world I built so only you could enter. Type the secret word to open.</div>
@@ -503,9 +442,6 @@
     // First time you saw her
     const FIRST_SEEN_DATE = new Date('2024-02-07T00:00:00+05:30');
 
-    // Landing countdown target: 30 Jan 2026, 00:00 IST
-    const LANDING_TARGET = new Date('2026-01-30T00:00:00+05:30').getTime();
-
     async function sha256(str) {
       const utf8 = new TextEncoder().encode(str);
       const digest = await crypto.subtle.digest('SHA-256', utf8);
@@ -521,69 +457,6 @@
       const hearts = document.getElementById('hearts');
       const audio = document.getElementById('bg-audio');
 
-      // LANDING elements
-      const landing = document.getElementById('landing');
-      const landOpenBtn = document.getElementById('landing-open');
-      const landDays = document.getElementById('land-days');
-      const landHours = document.getElementById('land-hours');
-      const landMinutes = document.getElementById('land-minutes');
-      const landSeconds = document.getElementById('land-seconds');
-
-      // show entry-screen after clicking landing open
-      landOpenBtn.addEventListener('click', () => {
-        // hide landing, show entry
-        landing.style.display = 'none';
-        entry.style.display = 'grid';
-        entry.setAttribute('aria-hidden','false');
-        input.focus();
-      });
-
-      // If you want direct skip (for testing), uncomment next line:
-      // landing.style.display = 'none'; entry.style.display='grid';
-
-      // Landing countdown update
-      function updateLandingCountdown(){
-        const now = Date.now();
-        let diff = LANDING_TARGET - now;
-        if (diff <= 0) {
-          // unlocked state
-          landDays.textContent = '0';
-          landHours.textContent = '00';
-          landMinutes.textContent = '00';
-          landSeconds.textContent = '00';
-          landOpenBtn.disabled = false;
-          landOpenBtn.removeAttribute('disabled');
-          landOpenBtn.textContent = 'Open';
-          return true;
-        } else {
-          const secTotal = Math.floor(diff / 1000);
-          const days = Math.floor(secTotal / (24 * 3600));
-          const hours = Math.floor((secTotal % (24 * 3600)) / 3600);
-          const mins = Math.floor((secTotal % 3600) / 60);
-          const secs = secTotal % 60;
-          landDays.textContent = days;
-          landHours.textContent = String(hours).padStart(2,'0');
-          landMinutes.textContent = String(mins).padStart(2,'0');
-          landSeconds.textContent = String(secs).padStart(2,'0');
-          landOpenBtn.disabled = true;
-          return false;
-        }
-      }
-
-      // Start landing timer
-      updateLandingCountdown();
-      const landingTimer = setInterval(() => {
-        const unlocked = updateLandingCountdown();
-        if (unlocked) {
-          clearInterval(landingTimer);
-        }
-      }, 500);
-
-      // Initially we show the landing (password hidden). If the target is in the past, landing Open is enabled automatically.
-      entry.style.display = 'none';
-      secret.style.display = 'none';
-
-      // --- Original code: password unlock logic, gallery, lightbox, etc. ---
       btn.addEventListener('click', async () => {
         const attempt = input.value || "";
         if ((await sha256(attempt)) === storedHash) {
